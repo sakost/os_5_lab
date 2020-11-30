@@ -8,64 +8,43 @@ add_executable(statMain src/statMain.c)
 add_executable(dynMain src/dynMain.c)
 
 
-add_library(calc_integral1 SHARED
-        src/calc_integral/realization1.c
+add_library(first SHARED
+        src/realization1.c
         )
 
-add_library(calc_integral2 SHARED
-        src/calc_integral/realization2.c
-)
 
-
-set_target_properties(calc_integral1 PROPERTIES
+set_target_properties(first PROPERTIES
         VERSION ${PROJECT_VERSION}
-        PUBLIC_HEADER src/calc_integral/realization.h
+        PUBLIC_HEADER src/realization.h
 )
-
-set_target_properties(calc_integral2 PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        PUBLIC_HEADER src/calc_integral/realization.h
-)
-
-target_link_libraries(calc_integral1 m)
-target_link_libraries(calc_integral2 m)
 
 
 add_library(
-        translate_number1 SHARED
-        src/translate_number/realization1.c
+        second SHARED
+        src/realization2.c
 )
 
-set_target_properties(translate_number1 PROPERTIES
+set_target_properties(second PROPERTIES
         VERSION ${PROJECT_VERSION}
-        PUBLIC_HEADER src/translate_number/realization1.h
-)
-
-add_library(
-        translate_number2 SHARED
-        src/translate_number/realization2.c
-)
-
-set_target_properties(translate_number2 PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        PUBLIC_HEADER src/translate_number/realization1.h
-)
+        PUBLIC_HEADER src/realization.h
+        )
 
 
-target_include_directories(calc_integral1 PRIVATE src/calc_integral)
-target_include_directories(calc_integral2 PRIVATE src/calc_integral)
+target_link_libraries(first m)
+target_link_libraries(second m)
 
-target_include_directories(translate_number1 PRIVATE src/translate_number)
-target_include_directories(translate_number2 PRIVATE src/translate_number)
+
+target_include_directories(first PRIVATE src/)
+target_include_directories(second PRIVATE src/)
 
 set(custom_targets)
 
-list(APPEND custom_targets calc_integral1)
-list(APPEND custom_targets calc_integral2)
+list(APPEND custom_targets first)
+list(APPEND custom_targets second)
 
 
 if(NOT lab_link_type)
-    set(lab_link_type calc_integral1)
+    set(lab_link_type first)
 endif()
 
 function(invalid_target)
@@ -87,4 +66,4 @@ message("Link library for statMain will be now " ${lab_link_type})
 
 target_link_libraries(statMain ${lab_link_type})
 target_link_libraries(dynMain ${CMAKE_DL_LIBS})
-add_dependencies(dynMain translate_number1 translate_number2 calc_integral1 calc_integral2)
+add_dependencies(dynMain first second)

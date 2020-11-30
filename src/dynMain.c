@@ -7,66 +7,44 @@
 
 
 typedef enum {
-    INTEGRAL,
-    TRANSLATE_NUMBER,
+    FIRST,
+    SECOND,
 } CONTEXT;
 
-CONTEXT r = INTEGRAL;
+CONTEXT r = FIRST;
 
-const char* integralLibName1 = "libcalc_integral1.so";
-const char* integralLibName2 = "libcalc_integral2.so";
+const char* libName1 = "libfirst.so";
+const char* libName2 = "libsecond.so";
 
-const char* translateNumberLibName1 = "libtranslate_number1.so";
-const char* translateNumberLibName2 = "libtranslate_number2.so";
-
-float (*sinInt1)(float, float, float) = NULL;
-float (*sinInt2)(float, float, float) = NULL;
-char* (*translation1)(long x) = NULL;
-char* (*translation2)(long x) = NULL;
+float (*sinInt)(float, float, float) = NULL;
+char* (*translation)(long x) = NULL;
 char *err;
 
-void *libHandle1 = NULL, *libHandle2 = NULL;
+void *libHandle = NULL;
 
 void loadDLibs(CONTEXT context){
-    const char *name1, *name2;
-    if(context == INTEGRAL){
-        name1 = integralLibName1;
-        name2 = integralLibName2;
+    const char *name;
+    if(context == FIRST){
+        name = libName1;
     } else{
-        name1 = translateNumberLibName1;
-        name2 = translateNumberLibName2;
+        name = libName2;
     }
 
-    libHandle1 = dlopen(name1, RTLD_LAZY);
-    if(!libHandle1){
-        fprintf(stderr, "%s\n", dlerror());
-        exit(EXIT_FAILURE);
-    }
-
-    libHandle2 = dlopen(name2, RTLD_LAZY);
-    if(!libHandle2){
+    libHandle = dlopen(name, RTLD_LAZY);
+    if(!libHandle){
         fprintf(stderr, "%s\n", dlerror());
         exit(EXIT_FAILURE);
     }
 }
 
 void unloadDLibs(){
-    dlclose(libHandle1);
-    dlclose(libHandle2);
+    dlclose(libHandle);
 }
 
 void loadContext(){
     loadDLibs(r);
-    if(r == TRANSLATE_NUMBER){
-        sinInt1 = sinInt2 = NULL;
-        translation1 = dlsym(libHandle1, "translation");
-        translation2 = dlsym(libHandle2, "translation");
-
-    } else{
-        translation1 = translation2 = NULL;
-        sinInt1 = dlsym(libHandle1, "SinIntegral");
-        sinInt2 = dlsym(libHandle2, "SinIntegral");
-    }
+    sinInt = dlsym(libHandle, "SinIntegral");
+    translation = dlsym(libHandle, "translation");
     if((err = dlerror())) {
         fprintf(stderr, "%s\n", err);
         exit(EXIT_FAILURE);
@@ -75,17 +53,17 @@ void loadContext(){
 
 void changeContext(){
     unloadDLibs();
-    if(r == INTEGRAL){
-        r = TRANSLATE_NUMBER;
+    if(r == FIRST){
+        r = SECOND;
     } else {
-        r = INTEGRAL;
+        r = FIRST;
     }
 
     loadContext();
 }
 
 int main(){
-    r = TRANSLATE_NUMBER;
+    r = FIRST;
     loadContext();
 
     int cmd = 0;
@@ -95,40 +73,35 @@ int main(){
         if(cmd == 0){
             changeContext();
             puts("Ok. Contract was changed");
-            if(r == INTEGRAL){
-                puts("Now context is integral");
+            if(r == FIRST){
+                puts("Now context is first");
             } else{
-                puts("Now context is translation");
+                puts("Now context is second");
             }
             continue;
         }
-        if(r == INTEGRAL){
+        if(cmd == 1) {
             float a, b, c;
-            if(scanf("%f %f %f", &a, &b, &c)== EOF){
+            if (scanf("%f %f %f", &a, &b, &c) == EOF) {
                 break;
             }
-
-            if(cmd == 1){
-                puts("Calculate sin(x) integral by rectangle method");
-                printf("%f\n", sinInt1(a, b, c));
-            } else{
-                puts("Calculate sin(x) integral by trapezoidal method");
-                printf("%f\n", sinInt2(a, b, c));
-            }
-        } else{
+            printf("%f\n", sinInt(a, b, c));
+        }
+        else{
             long x;
             if(scanf("%ld", &x)== EOF){
                 break;
             }
 
             char *string;
-            if(cmd == 1){
-                printf("Translate integer(%ld) from 10 base to 2 base\n", x);
-                string = translation1(x);
-            } else{
-                printf("Translate integer(%ld) from 10 base to 3 base\n", x);
-                string = translation2(x);
+            printf("Translate integer(%ld) from 10 base to ", x);
+            if(r == FIRST) {
+                printf("2");
+            }else{
+                printf("3");
             }
+            puts(" base");
+            string = translation(x);
             printf("%s\n", string);
             free(string);
         }
